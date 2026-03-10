@@ -30,4 +30,19 @@ cp -R "$AGENT_DIR/.soma/protocols/" "$CLI_DIR/.soma/protocols/"
 cp -R "$AGENT_DIR/.soma/templates/" "$CLI_DIR/.soma/templates/"
 echo "  ✓ .soma/ (protocols + templates)"
 
+# Scripts (search, scan, audit, etc.)
+if [ -d "$AGENT_DIR/scripts" ]; then
+  # Copy top-level scripts (excluding sync-from-agent.sh which is CLI-only)
+  for f in "$AGENT_DIR/scripts/"*.sh; do
+    [ -f "$f" ] && cp "$f" "$CLI_DIR/scripts/"
+  done
+  # Copy audit scripts directory
+  if [ -d "$AGENT_DIR/scripts/audits" ]; then
+    mkdir -p "$CLI_DIR/scripts/audits"
+    cp "$AGENT_DIR/scripts/audits/"*.sh "$CLI_DIR/scripts/audits/"
+  fi
+  chmod +x "$CLI_DIR/scripts/"*.sh "$CLI_DIR/scripts/audits/"*.sh 2>/dev/null
+  echo "  ✓ scripts/ ($(ls "$CLI_DIR/scripts/"*.sh 2>/dev/null | wc -l | tr -d ' ') scripts + audits)"
+fi
+
 echo "Done. Ready to publish."
