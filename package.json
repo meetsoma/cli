@@ -1,0 +1,91 @@
+{
+	"name": "meetsoma",
+	"version": "0.2.1",
+	"description": "AI coding agent with self-growing memory — identity, protocols, and muscles that evolve with use",
+	"type": "module",
+	"piConfig": {
+		"name": "soma",
+		"configDir": ".soma"
+	},
+	"bin": {
+		"soma": "dist/cli.js"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./hooks": {
+			"types": "./dist/core/hooks/index.d.ts",
+			"import": "./dist/core/hooks/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"docs",
+		"extensions",
+		"core",
+		"scripts",
+		".soma",
+		"CHANGELOG.md"
+	],
+	"dependencies": {
+		"@mariozechner/jiti": "^2.6.5",
+		"@mariozechner/pi-agent-core": "^0.57.1",
+		"@mariozechner/pi-ai": "^0.57.1",
+		"@mariozechner/pi-tui": "^0.57.1",
+		"@silvia-odwyer/photon-node": "^0.3.4",
+		"@sinclair/typebox": "^0.34.48",
+		"chalk": "^5.5.0",
+		"cli-highlight": "^2.1.11",
+		"diff": "^8.0.2",
+		"extract-zip": "^2.0.1",
+		"file-type": "^21.1.1",
+		"glob": "^13.0.1",
+		"hosted-git-info": "^9.0.2",
+		"ignore": "^7.0.5",
+		"marked": "^15.0.12",
+		"minimatch": "^10.2.3",
+		"proper-lockfile": "^4.1.2",
+		"strip-ansi": "^7.1.0",
+		"undici": "^7.19.1",
+		"yaml": "^2.8.2"
+	},
+	"overrides": {
+		"rimraf": "6.1.2",
+		"gaxios": {
+			"rimraf": "6.1.2"
+		}
+	},
+	"optionalDependencies": {
+		"@mariozechner/clipboard": "^0.3.2"
+	},
+	"keywords": [
+		"soma",
+		"meetsoma",
+		"ai",
+		"agent",
+		"memory",
+		"coding-agent",
+		"identity",
+		"muscles",
+		"protocols",
+		"self-evolving",
+		"cli",
+		"llm",
+		"persistence",
+		"session"
+	],
+	"author": "Gravicity <hello@gravicity.ai>",
+	"license": "MIT",
+	"homepage": "https://soma.gravicity.ai",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/meetsoma/soma.git"
+	},
+	"engines": {
+		"node": ">=20.6.0"
+	}
+}
