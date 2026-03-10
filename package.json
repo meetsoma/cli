@@ -24,10 +24,8 @@
 	},
 	"files": [
 		"dist",
-		"docs",
 		"extensions",
 		"core",
-		"scripts",
 		".soma",
 		"CHANGELOG.md"
 	],
@@ -87,5 +85,8 @@
 	},
 	"engines": {
 		"node": ">=20.6.0"
+	},
+	"scripts": {
+		"prepublishOnly": "bash scripts/sync-from-agent.sh"
 	}
 }

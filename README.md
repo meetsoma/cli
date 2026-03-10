@@ -57,10 +57,12 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 |---------|-------------|
 | `/breathe` | Save state + auto-continue into a fresh session |
 | `/exhale` | Save state, write preload, end session (alias: `/flush`) |
+| `/rest` | Disable keepalive + exhale — for when you're done for the night |
 | `/inhale` | Start fresh — reload identity + protocols |
 | `/pin <name>` | Pin a protocol/muscle to hot (stays loaded) |
 | `/kill <name>` | Drop a protocol/muscle's heat to zero |
 | `/soma` | Show memory status — identity, heat states, context |
+| `/keepalive` | Toggle cache keepalive (`on`/`off`/`status`) |
 | `/preload` | Show current preload content |
 
 ## Memory Structure

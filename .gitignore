@@ -1,2 +1,7 @@
 node_modules/
 package-lock.json
+
+# Runtime files — synced from agent repo at publish time, not tracked
+# Source of truth: meetsoma/soma-agent
+core/
+extensions/
