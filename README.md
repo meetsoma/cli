@@ -31,7 +31,7 @@ soma --resume       # Select a previous session to resume
 
 ## What Grows Over Time
 
-**Session 1:** Empty. Soma discovers her identity. Protocols load by default heat.
+**Session 1:** Soma discovers her identity. breath-cycle protocol loads by default — she already knows how to learn.
 
 **Session 5:** Preloads carry context between sessions. Muscles start forming from repeated patterns.
 
@@ -70,6 +70,8 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 ├── identity.md          ← who Soma becomes (discovered, not configured)
 ├── STATE.md             ← project architecture truth
 ├── protocols/           ← behavioral rules (heat-tracked)
+│   ├── breath-cycle.md  ← ships by default (the meta-protocol)
+│   └── _template.md     ← format reference for new protocols
 ├── memory/
 │   ├── muscles/         ← patterns learned from experience
 │   ├── preload-next.md  ← continuation for next session
