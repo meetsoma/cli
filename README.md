@@ -76,8 +76,7 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 │   ├── muscles/         ← patterns learned from experience
 │   ├── preload-next.md  ← continuation for next session
 │   └── sessions/        ← daily logs
-├── scripts/             ← dev tooling (search, scan, snapshot, tldr)
-└── templates/           ← starter protocols + identity templates
+└── scripts/             ← dev tooling (search, scan, snapshot, tldr)
 ```
 
 ## Philosophy
