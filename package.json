@@ -1,6 +1,6 @@
 {
 	"name": "meetsoma",
-	"version": "0.2.1",
+	"version": "0.2.2-beta.1",
 	"description": "AI coding agent with self-growing memory — identity, protocols, and muscles that evolve with use",
 	"type": "module",
 	"piConfig": {
@@ -83,7 +83,7 @@
 	"homepage": "https://soma.gravicity.ai",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/meetsoma/soma.git"
+		"url": "git+https://github.com/meetsoma/soma-agent.git"
 	},
 	"engines": {
 		"node": ">=20.6.0"

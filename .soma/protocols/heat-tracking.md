@@ -2,6 +2,7 @@
 type: protocol
 name: heat-tracking
 status: active
+created: 2025-12-15
 updated: 2026-03-09
 heat-default: hot
 applies-to: [always]
@@ -89,4 +90,4 @@ During every inhale (protocol loading) and every exhale (heat update). This prot
 
 Heat tracking is an enterprise feature. Free tier loads protocols statically (all or nothing). Enterprise gets the adaptive temperature system — protocols that matter rise, protocols that don't fade. The agent learns what behavioral rules actually get used.
 
-<!-- v1.0.0 | created: 2026-03-10 | MIT | Soma Team -->
+<!-- v1.0.0 | created: 2026-03-10 | MIT -->

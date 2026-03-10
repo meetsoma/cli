@@ -1,11 +1,14 @@
 /**
  * Soma Statusline Extension
  *
- * Footer rendering, context monitoring, auto-flush trigger,
- * flush detection, and auto-continue.
+ * Footer rendering, cache keepalive, session timing.
+ *
+ * OWNS: visual display, cache management, /status, /keepalive
+ * DOES NOT OWN: context warnings, flush detection, auto-continue
+ * (those live in soma-boot.ts — single source of truth for session lifecycle)
  *
  * Layout:
- *   ╭─ Opus-4.6─●36%─$1.01─♥on
+ *   ╭─ Opus-4.6─●36%─$1.01─◷4:15─♥on
  *   │  ⊛ main 🌿soma ¶12
  *   ╰─ ~/project 5m33s +72-2
  */
@@ -13,9 +16,7 @@
 import type { AssistantMessage } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { truncateToWidth } from "@mariozechner/pi-tui";
-import { existsSync, readFileSync, readdirSync } from "fs";
 import { execSync } from "child_process";
-import { resolve } from "path";
 import { findSomaDir, fmtDuration } from "../core/index.js";
 
 // ---------------------------------------------------------------------------
@@ -26,6 +27,18 @@ const CONFIG = {
 	contextWarnPct: 50,
 	contextCritPct: 75,
 	updateIntervalMs: 5000,
+	// Cache keepalive — hardcoded, not configurable (simplicity > flexibility)
+	cacheTtlSeconds: 300,        // standard Anthropic prompt cache TTL
+	keepaliveThresholdSeconds: 45, // ping when this much time remains
+	keepaliveCooldownSeconds: 30,  // minimum gap between pings
+	keepaliveEnabled: true,
+};
+
+// Cross-extension signal: boot can disable keepalive via globalThis.__somaKeepalive
+// Checked every tick in checkKeepalive()
+(globalThis as any).__somaKeepalive = {
+	get enabled() { return CONFIG.keepaliveEnabled; },
+	set enabled(v: boolean) { (CONFIG as any).keepaliveEnabled = v; },
 };
 
 // ---------------------------------------------------------------------------
@@ -34,12 +47,15 @@ const CONFIG = {
 
 interface StatusState {
 	sessionStartTs: number;
+	lastActivityTs: number;
 	turnCount: number;
 	isAgentBusy: boolean;
+	keepalivePingsSent: number;
+	lastKeepaliveTs: number;
 }
 
 // ---------------------------------------------------------------------------
-// Git helper (stays in extension — UI concern)
+// Git helper
 // ---------------------------------------------------------------------------
 
 let cachedGitInfo = { branch: "", dirty: false, stats: "", ts: 0 };
@@ -66,6 +82,13 @@ function getGitInfo(): { branch: string; dirty: boolean; stats: string } {
 	}
 }
 
+function fmtTime(secs: number): string {
+	if (secs <= 0) return "cold";
+	const m = Math.floor(secs / 60);
+	const s = secs % 60;
+	return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 // ---------------------------------------------------------------------------
 // Extension
 // ---------------------------------------------------------------------------
@@ -73,25 +96,44 @@ function getGitInfo(): { branch: string; dirty: boolean; stats: string } {
 export default function somaStatuslineExtension(pi: ExtensionAPI) {
 	const state: StatusState = {
 		sessionStartTs: Date.now(),
+		lastActivityTs: Date.now(),
 		turnCount: 0,
 		isAgentBusy: false,
+		keepalivePingsSent: 0,
+		lastKeepaliveTs: 0,
 	};
 
-	let continuationPromptPath: string | null = null;
-	let flushCompleteDetected = false;
-	let autoFlushSent = false;
-	let wrapUpSent = false;
-	let lastWarnThreshold = 0;
+	let updateTimer: ReturnType<typeof setInterval> | null = null;
+	let latestCtx: ExtensionContext | null = null;
 
-	function findContinuationPrompt(): string | null {
-		if (continuationPromptPath) return continuationPromptPath;
-		const soma = findSomaDir();
-		if (!soma) return null;
-		for (const sub of ["", "/memory"]) {
-			const candidate = `${soma.path}${sub}/continuation-prompt.md`;
-			try { readFileSync(candidate); return candidate; } catch {}
+	function idleSeconds(): number {
+		return Math.floor((Date.now() - state.lastActivityTs) / 1000);
+	}
+
+	function cacheRemaining(): number {
+		return Math.max(0, CONFIG.cacheTtlSeconds - idleSeconds());
+	}
+
+	// -------------------------------------------------------------------
+	// Cache Keepalive — prevents expensive prompt re-caching on idle
+	// -------------------------------------------------------------------
+
+	function checkKeepalive(ctx: ExtensionContext): void {
+		if (!CONFIG.keepaliveEnabled || state.isAgentBusy) return;
+		const remaining = cacheRemaining();
+		const timeSinceLastPing = (Date.now() - state.lastKeepaliveTs) / 1000;
+
+		if (
+			remaining > 0 &&
+			remaining <= CONFIG.keepaliveThresholdSeconds &&
+			timeSinceLastPing > CONFIG.keepaliveCooldownSeconds
+		) {
+			state.keepalivePingsSent++;
+			state.lastKeepaliveTs = Date.now();
+			state.lastActivityTs = Date.now();
+			pi.sendUserMessage("[cache keepalive — respond with just 'ok']", { deliverAs: "followUp" });
+			ctx.ui.notify(`♥ Cache keepalive #${state.keepalivePingsSent} (${fmtTime(remaining)} was remaining)`, "info");
 		}
-		return null;
 	}
 
 	// -------------------------------------------------------------------
@@ -125,6 +167,21 @@ export default function somaStatuslineExtension(pi: ExtensionAPI) {
 					const B_BLUE = truecolor ? "\x1b[1;38;2;100;140;220m" : "\x1b[1;34m";
 					const SEP = brand("─");
 
+					// Cache TTL colors — cool→warm (distinct from context health)
+					const remaining = cacheRemaining();
+					const idleColor = (() => {
+						if (remaining <= 0) return MUTED;
+						if (truecolor) {
+							if (remaining <= 60) return "\x1b[1;38;2;255;140;0m";
+							if (remaining <= 180) return "\x1b[1;38;2;100;180;255m";
+							return "\x1b[1;38;2;80;140;220m";
+						}
+						if (remaining <= 60) return "\x1b[1;38;5;208m";
+						if (remaining <= 180) return "\x1b[1;38;5;75m";
+						return "\x1b[1;38;5;68m";
+					})();
+					const cacheFmt = (t: string) => `${idleColor}${t}${RESET}`;
+
 					let totalCost = 0;
 					for (const entry of ctx.sessionManager.getEntries()) {
 						if (entry.type === "message" && entry.message.role === "assistant") {
@@ -150,8 +207,19 @@ export default function somaStatuslineExtension(pi: ExtensionAPI) {
 					else if (contextPct >= CONFIG.contextWarnPct) ctxColor = warn;
 					const ctxStr = `${contextPct.toFixed(0)}%`;
 
-					const line1 = [brand("╭─"), brand(shortModel + thinkingStr), ctxColor(`◉${ctxStr}`), brand(`$${totalCost.toFixed(2)}`)].join(SEP);
+					// Keepalive indicator
+					const kaStr = CONFIG.keepaliveEnabled
+						? (state.keepalivePingsSent > 0 ? good(`♥${state.keepalivePingsSent}`) : dim("♥on"))
+						: dim("♥off");
 
+					// Line 1: ╭─ Model─●Context%─$Cost─◷Cache─♥KA
+					const line1 = [
+						brand("╭─"), brand(shortModel + thinkingStr),
+						ctxColor(`◉${ctxStr}`), brand(`$${totalCost.toFixed(2)}`),
+						cacheFmt(`◷${fmtTime(remaining)}`), kaStr,
+					].join(SEP);
+
+					// Line 2: │  ⊛ branch 🌿soma ¶turns
 					const gitIcon = git.dirty ? `${B_YELLOW}⊛${RESET}` : `${B_BLUE}⊚${RESET}`;
 					const line2Items: string[] = [brand("│ ")];
 					if (git.branch) {
@@ -163,6 +231,7 @@ export default function somaStatuslineExtension(pi: ExtensionAPI) {
 					line2Items.push(dim(`¶${state.turnCount}`));
 					const line2 = line2Items.join(" ");
 
+					// Line 3: ╰─ ~/path duration +ins-del
 					let pwd = process.cwd();
 					const home = process.env.HOME || process.env.USERPROFILE;
 					if (home && pwd.startsWith(home)) pwd = `~${pwd.slice(home.length)}`;
@@ -187,152 +256,70 @@ export default function somaStatuslineExtension(pi: ExtensionAPI) {
 	}
 
 	// -------------------------------------------------------------------
-	// Events
+	// Events — only what statusline OWNS
 	// -------------------------------------------------------------------
 
 	pi.on("session_start", async (_event, ctx) => {
+		latestCtx = ctx;
 		state.sessionStartTs = Date.now();
+		state.lastActivityTs = Date.now();
+
+		// Restore persisted state
 		for (const entry of ctx.sessionManager.getEntries()) {
 			if (entry.type === "custom" && entry.customType === "soma-statusline" && entry.data) {
 				state.turnCount = (entry.data as any).turnCount || 0;
+				state.keepalivePingsSent = (entry.data as any).keepalivePingsSent || 0;
 				if ((entry.data as any).sessionStartTs) state.sessionStartTs = (entry.data as any).sessionStartTs;
 			}
 		}
+
 		installFooter(ctx);
+
+		// Start keepalive timer
+		updateTimer = setInterval(() => {
+			if (latestCtx) checkKeepalive(latestCtx);
+		}, CONFIG.updateIntervalMs);
 	});
 
-	pi.on("turn_start", async () => { state.turnCount++; state.isAgentBusy = true; });
+	pi.on("turn_start", async () => {
+		state.turnCount++;
+		state.isAgentBusy = true;
+		state.lastActivityTs = Date.now();
+	});
 
 	pi.on("turn_end", async (_event, ctx) => {
 		state.isAgentBusy = false;
+		state.lastActivityTs = Date.now();
+		latestCtx = ctx;
+
+		// Persist state periodically
 		if (state.turnCount % 5 === 0) {
-			pi.appendEntry("soma-statusline", { turnCount: state.turnCount, sessionStartTs: state.sessionStartTs });
+			pi.appendEntry("soma-statusline", {
+				turnCount: state.turnCount,
+				keepalivePingsSent: state.keepalivePingsSent,
+				sessionStartTs: state.sessionStartTs,
+			});
 		}
-
-		const usage = ctx.getContextUsage?.();
-		if (!usage || usage.percent === null) return;
-		const pct = usage.percent;
-
-		let threshold = 0;
-		if (pct >= 85) threshold = 85;
-		else if (pct >= 80) threshold = 80;
-		else if (pct >= 70) threshold = 70;
-		else if (pct >= 50) threshold = 50;
-
-		if (threshold > 0 && threshold > lastWarnThreshold) {
-			lastWarnThreshold = threshold;
-
-			if (pct >= 85 && !autoFlushSent) {
-				autoFlushSent = true;
-				ctx.ui.notify(`🔴 Context at ${pct.toFixed(0)}% — AUTO-FLUSH`, "error");
-
-				const soma = findSomaDir();
-				const memDir = soma ? `${soma.path}/memory` : ".soma/memory";
-
-				pi.sendUserMessage(
-					`[AUTO-EXHALE — context at ${pct.toFixed(0)}%]\n\n` +
-					`Context is critically full. Exhale NOW.\n\n` +
-					`1. Write \`${memDir}/preload-next.md\` — what shipped, key decisions, next priorities.\n` +
-					`2. Commit all work.\n` +
-					`3. Say "FLUSH COMPLETE".`,
-					{ deliverAs: "followUp" }
-				);
-			} else if (pct >= 80) {
-				ctx.ui.notify(`⚠️ Context ${pct.toFixed(0)}% — flush soon`, "warning");
-			} else if (pct >= 70 && !wrapUpSent) {
-				wrapUpSent = true;
-				ctx.ui.notify(`Context ${pct.toFixed(0)}%`, "info");
-			} else if (pct >= 50) {
-				ctx.ui.notify(`Context ${pct.toFixed(0)}%`, "info");
-			}
-		}
-	});
-
-	// Detect "FLUSH COMPLETE"
-	pi.on("message_end", async (event) => {
-		if (event.message.role !== "assistant") return;
-		const content = event.message.content;
-		if (typeof content === "string") {
-			if (content.includes("FLUSH COMPLETE")) flushCompleteDetected = true;
-		} else if (Array.isArray(content)) {
-			if (content.some((block: any) => block.type === "text" && block.text?.includes("FLUSH COMPLETE"))) {
-				flushCompleteDetected = true;
-			}
-		}
-	});
-
-	// Detect flush file writes
-	pi.on("tool_result", async (event, ctx) => {
-		if (event.toolName !== "write" || event.isError) return;
-		const writePath = (event.input as any)?.path as string;
-		if (!writePath) return;
-		const filename = writePath.split("/").pop() || "";
-		if (filename === "continuation-prompt.md") {
-			continuationPromptPath = writePath;
-			ctx.ui.notify(`✅ Continuation prompt captured`, "info");
-		} else if (filename.startsWith("preload-next") && filename.endsWith(".md")) {
-			ctx.ui.notify(`✅ Preload written`, "info");
-		}
-	});
-
-	pi.on("agent_end", async (_event, ctx) => {
-		if (flushCompleteDetected && continuationPromptPath) {
-			ctx.ui.notify("🟢 FLUSH COMPLETE — Hit Ctrl+N or type /auto-continue", "info");
-		}
-	});
-
-	// Auto-continue
-	pi.registerCommand("auto-continue", {
-		description: "Create new session and inject continuation prompt",
-		handler: async (_args, ctx) => {
-			const promptPath = continuationPromptPath || findContinuationPrompt();
-			if (!promptPath) { ctx.ui.notify("⚠️ No continuation prompt found", "warning"); return; }
-			let content = "";
-			try { content = readFileSync(promptPath, "utf-8").trim(); } catch {}
-			if (!content) { ctx.ui.notify("⚠️ Continuation prompt is empty", "warning"); return; }
-
-			ctx.ui.notify("🔄 Creating new session...", "info");
-			try {
-				const result = await ctx.newSession({});
-				if (!result.cancelled) {
-					pi.sendUserMessage(content, { deliverAs: "followUp" });
-					ctx.ui.notify("✅ Auto-continued", "info");
-				}
-			} catch (err: any) {
-				ctx.ui.notify(`⚠️ Auto-continue failed: ${err?.message?.slice(0, 100)}`, "error");
-			}
-			continuationPromptPath = null;
-			flushCompleteDetected = false;
-			autoFlushSent = false;
-			wrapUpSent = false;
-			lastWarnThreshold = 0;
-		},
 	});
 
 	pi.on("session_switch", async (event, ctx) => {
-		if (event.reason !== "new") return;
-		state.turnCount = 0;
-		state.sessionStartTs = Date.now();
-		wrapUpSent = false;
-		autoFlushSent = false;
-		flushCompleteDetected = false;
-		lastWarnThreshold = 0;
-		installFooter(ctx);
-
-		if (!continuationPromptPath) {
-			const promptPath = findContinuationPrompt();
-			if (promptPath) {
-				try {
-					const prompt = readFileSync(promptPath, "utf-8");
-					if (prompt.trim()) {
-						ctx.ui.notify("📋 Continuation prompt found — injecting", "info");
-						pi.sendUserMessage(prompt, { deliverAs: "followUp" });
-					}
-				} catch {}
-			}
+		if (event.reason === "new") {
+			state.turnCount = 0;
+			state.keepalivePingsSent = 0;
+			state.lastActivityTs = Date.now();
+			state.sessionStartTs = Date.now();
+			latestCtx = ctx;
+			installFooter(ctx);
 		}
-		continuationPromptPath = null;
 	});
+
+	pi.on("session_shutdown", async () => {
+		if (updateTimer) clearInterval(updateTimer);
+	});
+
+	// -------------------------------------------------------------------
+	// Commands — only what statusline OWNS
+	// -------------------------------------------------------------------
 
 	pi.registerCommand("status", {
 		description: "Show session stats",
@@ -340,10 +327,31 @@ export default function somaStatuslineExtension(pi: ExtensionAPI) {
 			const usage = ctx.getContextUsage?.();
 			ctx.ui.notify([
 				`Context: ${usage?.percent ?? "?"}% (${usage?.tokens ?? "?"} / ${usage?.contextWindow ?? "?"} tokens)`,
+				`Cache: ${cacheRemaining() > 0 ? fmtTime(cacheRemaining()) : "COLD"} / ${fmtTime(CONFIG.cacheTtlSeconds)}`,
+				`Keepalive: ${CONFIG.keepaliveEnabled ? "ON" : "OFF"} (${state.keepalivePingsSent} pings)`,
 				`Turns: ${state.turnCount} | Uptime: ${fmtDuration(Date.now() - state.sessionStartTs)}`,
 			].join("\n"), "info");
 		},
 	});
 
-	pi.on("session_shutdown", async () => {});
+	pi.registerCommand("keepalive", {
+		description: "Toggle cache keepalive on/off",
+		getArgumentCompletions: (prefix) =>
+			["on", "off", "status"].filter(o => o.startsWith(prefix)).map(o => ({ value: o, label: o })),
+		handler: async (args, ctx) => {
+			const cmd = args.trim().toLowerCase() || "status";
+			if (cmd === "on") {
+				(CONFIG as any).keepaliveEnabled = true;
+				ctx.ui.notify("♥ Keepalive ON", "info");
+			} else if (cmd === "off") {
+				(CONFIG as any).keepaliveEnabled = false;
+				ctx.ui.notify("♥ Keepalive OFF", "info");
+			} else {
+				ctx.ui.notify([
+					`Keepalive: ${CONFIG.keepaliveEnabled ? "ON" : "OFF"} (${state.keepalivePingsSent} pings)`,
+					`Cache: ${cacheRemaining() > 0 ? fmtTime(cacheRemaining()) : "COLD"} / ${fmtTime(CONFIG.cacheTtlSeconds)}`,
+				].join("\n"), "info");
+			}
+		},
+	});
 }

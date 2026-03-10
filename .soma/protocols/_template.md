@@ -2,6 +2,7 @@
 type: protocol
 name: REPLACE
 status: draft
+created: 2026-02-01
 updated: 2026-03-09
 heat-default: warm
 applies-to: [always]
@@ -25,4 +26,4 @@ edited-by: system
 
 <!-- Explicit exclusions. -->
 
-<!-- version | created: YYYY-MM-DD | MIT | Soma Team | upstream: -->
+<!-- version | created: YYYY-MM-DD | MIT | upstream: -->
