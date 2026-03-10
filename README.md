@@ -95,7 +95,7 @@ export OPENAI_API_KEY=sk-...       # OpenAI
 
 ## Documentation
 
-Full docs at [soma.gravicity.ai](https://soma.gravicity.ai) and [GitHub](https://github.com/meetsoma/agent).
+Full docs at [soma.gravicity.ai](https://soma.gravicity.ai) and [GitHub](https://github.com/meetsoma/soma-agent).
 
 ## License
 
