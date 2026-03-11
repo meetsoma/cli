@@ -67,6 +67,15 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 | `/auto-continue` | Create new session and inject last preload as continuation |
 | `/install <type> <name>` | Install protocol/muscle/skill/template from hub |
 | `/list local\|remote` | Browse installed or available content |
+
+### CLI Commands (non-interactive)
+
+```bash
+soma content install <type> <name>   # Install from hub (protocol, muscle, skill, template)
+soma content list --remote           # List available content on hub
+soma content list --local            # List installed content
+soma init --template <name>          # Scaffold .soma/ from a template
+```
 | `/preload` | Show current preload content |
 
 ## Memory Structure
