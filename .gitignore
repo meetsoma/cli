@@ -5,3 +5,4 @@ package-lock.json
 # Source of truth: meetsoma/soma-agent
 core/
 extensions/
+prompts/
