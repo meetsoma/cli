@@ -19,7 +19,7 @@ cd your-project
 soma
 ```
 
-On first run, Soma creates `.soma/` and writes her own identity based on your workspace. Next session, she picks up where she left off.
+On first run, Soma creates `.soma/` — detecting your project stack, parent workspaces, and `CLAUDE.md` automatically. She writes her own identity based on what she finds. Next session, she picks up where she left off.
 
 ### Session Modes
 
@@ -62,6 +62,7 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 | `/pin <name>` | Pin a protocol/muscle to hot (stays loaded) |
 | `/kill <name>` | Drop a protocol/muscle's heat to zero |
 | `/soma` | Show memory status — identity, heat states, context |
+| `/soma prompt` | Preview compiled system prompt with token estimate |
 | `/keepalive` | Toggle cache keepalive (`on`/`off`/`status`) |
 | `/preload` | Show current preload content |
 
@@ -74,8 +75,9 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 ├── protocols/           ← behavioral rules (heat-tracked)
 ├── memory/
 │   ├── muscles/         ← patterns learned from experience
-│   ├── preload-next.md  ← continuation for next session
+│   ├── preload-*.md     ← session-scoped continuations
 │   └── sessions/        ← daily logs
+├── settings.json        ← thresholds, inheritance, persona, system prompt toggles
 ├── scripts/             ← dev tooling (search, scan, snapshot, tldr)
 └── templates/           ← starter protocols + identity templates
 ```

@@ -1,4 +1,10 @@
-# Getting Started
+---
+title: "Getting Started"
+description: "Install Soma, run your first session, understand the basics."
+section: "First Steps"
+order: 1
+---
+
 
 <!-- tldr -->
 `npm i -g meetsoma` → `cd your-project` → `soma`. First run creates `.soma/` and discovers identity. Use `soma -c` to continue with last session's context. `/breathe` saves + continues, `/exhale` saves + stops, `/pin` keeps protocols hot, `/kill` drops them cold.
@@ -17,7 +23,9 @@ cd your-project
 soma
 ```
 
-On first run, Soma will ask to create a `.soma/` directory. Say yes. She'll write her own identity based on your workspace.
+On first run, Soma will ask to create a `.soma/` directory. Say yes.
+
+**Smart init** detects your project automatically — it finds parent `.soma/` directories, reads `CLAUDE.md` if present, identifies your package manager, and detects language/framework signals. Soma uses this to write a tailored identity and suggest relevant protocols.
 
 ## Session Modes
 
@@ -27,7 +35,7 @@ On first run, Soma will ask to create a `.soma/` directory. Say yes. She'll writ
 soma
 ```
 
-Starts fresh. Loads identity, hot protocols, and active muscles. No replay of previous session context.
+Starts fresh. Runs the [boot sequence](/docs/configuration#boot-sequence): identity, protocols, muscles, scripts, git context. No replay of previous session context.
 
 ### Resume Session
 
@@ -37,7 +45,7 @@ soma --continue
 soma -c
 ```
 
-Resumes the last session. Loads identity + preload (what happened, what's next).
+Resumes the last session. Runs all boot steps including preload (what happened, what's next).
 
 ### Select a Session
 
@@ -53,14 +61,18 @@ Pick from previous sessions to resume.
 
 | Command | What it does |
 |---------|-------------|
-| `/inhale` | Start fresh — shows preload status, suggests `soma -c` |
 | `/breathe` | Save state + auto-continue into fresh session |
 | `/exhale` | Save state, write preload, session ends (alias: `/flush`) |
+| `/rest` | Disable keepalive + exhale — for when you're done for the night |
+| `/inhale` | Start fresh — shows preload status, suggests `soma -c` |
 | `/pin <name>` | Pin a protocol/muscle to hot (stays loaded) |
 | `/kill <name>` | Kill a protocol/muscle (drops to cold) |
+| `/keepalive` | Toggle cache keepalive on/off (or check status) |
+| `/status` | Show session stats — context %, cache, keepalive, turns, uptime |
+| `/preload` | List available preload files |
 | `/soma status` | Show memory status (identity, preload, muscles, protocols) |
 | `/soma init` | Create `.soma/` in current directory |
-| `/preload` | List available preload files |
+| `/soma prompt` | Preview compiled system prompt with token estimate |
 
 ## The `.soma/` Directory
 
@@ -72,9 +84,11 @@ Created by `soma init` or on first run:
 ├── STATE.md                 ← project architecture truth
 ├── settings.json            ← configurable thresholds (optional)
 ├── protocols/               ← behavioral rules (heat-tracked)
+│   ├── breath-cycle.md      ← ships by default (the meta-protocol)
+│   └── _template.md         ← format reference for new protocols
 ├── memory/
 │   ├── muscles/             ← patterns learned from experience
-│   ├── preload-next.md      ← continuation for next session
+│   ├── preload-<sessionId>.md ← session-scoped continuations
 │   └── sessions/            ← daily logs
 └── scripts/                 ← dev tooling (search, scan, etc.)
 ```
@@ -93,3 +107,4 @@ Templates ship. Instances don't.
 - **Let identity grow** — don't pre-write it. Let Soma discover who she becomes through your work.
 - **Trust the breath** — don't worry about context limits. Soma flushes and continues automatically.
 - **Read muscles** — check `.soma/memory/muscles/` to see what patterns Soma has learned.
+- **Tune settings** — everything is configurable: boot steps, heat thresholds, context warnings. See [Configuration](/docs/configuration).
