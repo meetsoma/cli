@@ -3,7 +3,7 @@
  * Handles: soma content install|list, soma init --template
  */
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 
 const REPO = "meetsoma/community";
 const BRANCH = "main";
@@ -74,23 +74,28 @@ async function installTemplate(somaPath, name, force) {
 		return { ok: false, error: `Template manifest not found: ${name}` };
 	}
 
-	// Identity
+	// Identity (with placeholder substitution)
+	const projectName = basename(process.cwd());
+	const dateStr = new Date().toISOString().slice(0, 10);
 	try {
-		const identity = await fetchText(`${RAW_BASE}/templates/${name}/identity.md`);
+		let identity = await fetchText(`${RAW_BASE}/templates/${name}/identity.md`);
+		identity = identity.replace(/\{\{PROJECT_NAME\}\}/g, projectName).replace(/\{\{DATE\}\}/g, dateStr);
 		const p = join(somaPath, "identity.md");
 		if (!existsSync(p) || force) writeFileSync(p, identity, "utf-8");
 	} catch {}
 
-	// Settings
+	// Settings (with placeholder substitution)
 	try {
-		const settings = await fetchText(`${RAW_BASE}/templates/${name}/settings.json`);
+		let settingsRaw = await fetchText(`${RAW_BASE}/templates/${name}/settings.json`);
+		settingsRaw = settingsRaw.replace(/\{\{ROOT\}\}/g, ".soma");
+		const settings = JSON.parse(settingsRaw);
 		const p = join(somaPath, "settings.json");
 		if (!existsSync(p) || force) {
-			writeFileSync(p, settings, "utf-8");
+			writeFileSync(p, JSON.stringify(settings, null, 2) + "\n", "utf-8");
 		} else {
 			const existing = JSON.parse(readFileSync(p, "utf-8"));
-			const merged = { ...JSON.parse(settings), ...existing };
-			writeFileSync(p, JSON.stringify(merged, null, 2), "utf-8");
+			const merged = { ...settings, ...existing };
+			writeFileSync(p, JSON.stringify(merged, null, 2) + "\n", "utf-8");
 		}
 	} catch {}
 
