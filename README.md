@@ -19,19 +19,19 @@ cd your-project
 soma
 ```
 
-On first run, Soma creates `.soma/` — detecting your project stack, parent workspaces, and `CLAUDE.md` automatically. She writes her own identity based on what she finds. Next session, she picks up where she left off.
+On first run, Soma creates `.soma/` — detecting your project stack, parent workspaces, and existing `CLAUDE.md`. A starter identity file is written with detected context. The agent reviews it and rewrites it to fit the project. Next session, it picks up where it left off.
 
 ### Session Modes
 
 ```bash
 soma                # Fresh session — identity + protocols, clean slate
-soma --continue     # Resume — picks up where you left off
-soma --resume       # Select a previous session to resume
+soma -c             # Continue — picks up where you left off
+soma -r             # Resume — select a previous session to resume
 ```
 
 ## What Grows Over Time
 
-**Session 1:** Empty. Soma discovers her identity. Protocols load by default heat.
+**Session 1:** Minimal. The agent discovers the project and writes its identity. Protocols load at default heat.
 
 **Session 5:** Preloads carry context between sessions. Muscles start forming from repeated patterns.
 
@@ -39,7 +39,7 @@ soma --resume       # Select a previous session to resume
 
 ## The Breath Cycle
 
-Sessions are breaths. **Exhale** writes what Soma learned. **Inhale** picks it up.
+Sessions are breaths. **Exhale** writes what was learned. **Inhale** picks it up.
 
 ```
 Session 1 (inhale) → work → exhale (preload written)
@@ -52,6 +52,8 @@ Session 3 (inhale) ← ...and so on
 At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 
 ## Commands
+
+### In-Session (slash commands)
 
 | Command | What it does |
 |---------|-------------|
@@ -67,8 +69,9 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 | `/auto-continue` | Create new session and inject last preload as continuation |
 | `/install <type> <name>` | Install protocol/muscle/skill/template from hub |
 | `/list local\|remote` | Browse installed or available content |
+| `/preload` | Show current preload content |
 
-### CLI Commands (non-interactive)
+### CLI (non-interactive)
 
 ```bash
 soma content install <type> <name>   # Install from hub (protocol, muscle, skill, template)
@@ -76,13 +79,12 @@ soma content list --remote           # List available content on hub
 soma content list --local            # List installed content
 soma init --template <name>          # Scaffold .soma/ from a template
 ```
-| `/preload` | Show current preload content |
 
 ## Memory Structure
 
 ```
 .soma/
-├── identity.md          ← who Soma becomes (discovered, not configured)
+├── identity.md          ← who the agent becomes in this project
 ├── STATE.md             ← project architecture truth
 ├── protocols/           ← behavioral rules (heat-tracked)
 ├── memory/
@@ -91,12 +93,12 @@ soma init --template <name>          # Scaffold .soma/ from a template
 │   └── sessions/        ← daily logs
 ├── settings.json        ← thresholds, inheritance, persona, system prompt toggles
 ├── scripts/             ← dev tooling (search, scan, snapshot, tldr)
-└── templates/           ← starter protocols + identity templates
+└── extensions/          ← project-local TypeScript extensions
 ```
 
 ## Philosophy
 
-- **Identity is discovered, not configured.** Soma writes who she is after she's worked, not before.
+- **Identity is discovered, not configured.** The agent writes who it is after working, not before.
 - **Structure is earned, not imposed.** Starts minimal. Grows where needed.
 - **Memory is cultivated, not stored.** Patterns emerge from use.
 - **Sessions are breaths.** Each exhale writes what was learned. Each inhale picks it up.
