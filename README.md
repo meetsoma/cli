@@ -64,6 +64,9 @@ At 85% context, Soma auto-exhales and continues seamlessly. No context is lost.
 | `/soma` | Show memory status — identity, heat states, context |
 | `/soma prompt` | Preview compiled system prompt with token estimate |
 | `/keepalive` | Toggle cache keepalive (`on`/`off`/`status`) |
+| `/auto-continue` | Create new session and inject last preload as continuation |
+| `/install <type> <name>` | Install protocol/muscle/skill/template from hub |
+| `/list local\|remote` | Browse installed or available content |
 | `/preload` | Show current preload content |
 
 ## Memory Structure
