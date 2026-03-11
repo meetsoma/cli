@@ -25,6 +25,11 @@ mkdir -p "$CLI_DIR/extensions"
 cp "$AGENT_DIR/extensions/"*.ts "$CLI_DIR/extensions/"
 echo "  ✓ extensions/ ($(ls "$CLI_DIR/extensions/" | wc -l | tr -d ' ') files)"
 
+# Prompts (system-core.md etc.)
+mkdir -p "$CLI_DIR/prompts"
+cp "$AGENT_DIR/prompts/"*.md "$CLI_DIR/prompts/"
+echo "  ✓ prompts/ ($(ls "$CLI_DIR/prompts/" | wc -l | tr -d ' ') files)"
+
 # .soma protocols + templates
 cp -R "$AGENT_DIR/.soma/protocols/" "$CLI_DIR/.soma/protocols/"
 cp -R "$AGENT_DIR/.soma/templates/" "$CLI_DIR/.soma/templates/"

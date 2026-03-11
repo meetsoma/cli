@@ -26,6 +26,7 @@
 		"dist",
 		"extensions",
 		"core",
+		"prompts",
 		".soma",
 		"CHANGELOG.md"
 	],
