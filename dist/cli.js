@@ -13,7 +13,20 @@ import { setBedrockProviderModule } from "@mariozechner/pi-ai";
 import { bedrockProviderModule } from "@mariozechner/pi-ai/bedrock-provider";
 import { EnvHttpProxyAgent, setGlobalDispatcher } from "undici";
 import { main } from "./main.js";
+import { handleContentCommand } from "./content-cli.js";
 setGlobalDispatcher(new EnvHttpProxyAgent());
 setBedrockProviderModule(bedrockProviderModule);
-main(process.argv.slice(2));
+
+// Intercept Soma content commands before pi's main()
+const args = process.argv.slice(2);
+if (args[0] === "content" || (args[0] === "init" && args.includes("--template"))) {
+	handleContentCommand(args).then(handled => {
+		if (!handled) main(args);
+	}).catch(err => {
+		console.error("Soma content error:", err.message);
+		process.exit(1);
+	});
+} else {
+	main(args);
+}
 //# sourceMappingURL=cli.js.map
