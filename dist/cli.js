@@ -31,7 +31,7 @@ if (args[0] === "--version" || args[0] === "-V" || args[0] === "-v") {
 	process.exit(0);
 }
 
-if (args[0] === "content" || (args[0] === "init" && args.includes("--template"))) {
+if (args[0] === "content" || args[0] === "install" || args[0] === "list" || (args[0] === "init" && args.includes("--template"))) {
 	handleContentCommand(args).then(handled => {
 		if (!handled) main(args);
 	}).catch(err => {
