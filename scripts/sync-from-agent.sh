@@ -30,10 +30,43 @@ mkdir -p "$CLI_DIR/prompts"
 cp "$AGENT_DIR/prompts/"*.md "$CLI_DIR/prompts/"
 echo "  ✓ prompts/ ($(ls "$CLI_DIR/prompts/" | wc -l | tr -d ' ') files)"
 
-# .soma protocols + templates
-cp -R "$AGENT_DIR/.soma/protocols/" "$CLI_DIR/.soma/protocols/"
+# .soma protocols — only scope:bundled ship in npm package
+# Source of truth for scope: community repo frontmatter
+COMMUNITY_DIR="${COMMUNITY_DIR:-$(dirname "$CLI_DIR")/community}"
+mkdir -p "$CLI_DIR/.soma/protocols"
+
+bundled_count=0
+hub_count=0
+for proto in "$AGENT_DIR/.soma/protocols/"*.md; do
+  [ -f "$proto" ] || continue
+  name=$(basename "$proto")
+  [[ "$name" == _* ]] && { cp "$proto" "$CLI_DIR/.soma/protocols/$name"; continue; }
+  [[ "$name" == "README.md" ]] && { cp "$proto" "$CLI_DIR/.soma/protocols/$name"; continue; }
+
+  # Check scope from community repo (canonical) or fallback to file itself
+  community_proto="$COMMUNITY_DIR/protocols/$name"
+  scope=""
+  if [ -f "$community_proto" ]; then
+    scope=$(awk '/^---$/{c++;next} c==1 && /^scope:/{gsub(/^scope:[[:space:]]*/, ""); print; exit} c>=2{exit}' "$community_proto")
+  fi
+  if [ -z "$scope" ]; then
+    scope=$(awk '/^---$/{c++;next} c==1 && /^scope:/{gsub(/^scope:[[:space:]]*/, ""); print; exit} c>=2{exit}' "$proto")
+  fi
+
+  if [ "$scope" = "bundled" ]; then
+    cp "$proto" "$CLI_DIR/.soma/protocols/$name"
+    bundled_count=$((bundled_count + 1))
+  else
+    # Remove from CLI if it was previously synced
+    [ -f "$CLI_DIR/.soma/protocols/$name" ] && rm "$CLI_DIR/.soma/protocols/$name"
+    hub_count=$((hub_count + 1))
+  fi
+done
+echo "  ✓ .soma/protocols/ ($bundled_count bundled, $hub_count hub-only skipped)"
+
+# .soma templates
 cp -R "$AGENT_DIR/.soma/templates/" "$CLI_DIR/.soma/templates/"
-echo "  ✓ .soma/ (protocols + templates)"
+echo "  ✓ .soma/templates/"
 
 # Scripts (search, scan, audit, etc.)
 if [ -d "$AGENT_DIR/scripts" ]; then
