@@ -68,6 +68,15 @@ echo "  ✓ .soma/protocols/ ($bundled_count bundled, $hub_count hub-only skippe
 cp -R "$AGENT_DIR/.soma/templates/" "$CLI_DIR/.soma/templates/"
 echo "  ✓ .soma/templates/"
 
+# Docs (agent docs are source of truth)
+if [ -d "$AGENT_DIR/docs" ]; then
+  mkdir -p "$CLI_DIR/docs"
+  cp "$AGENT_DIR/docs/"*.md "$CLI_DIR/docs/"
+  # Also sync CHANGELOG
+  [ -f "$AGENT_DIR/CHANGELOG.md" ] && cp "$AGENT_DIR/CHANGELOG.md" "$CLI_DIR/docs/CHANGELOG.md"
+  echo "  ✓ docs/ ($(ls "$CLI_DIR/docs/"*.md | wc -l | tr -d ' ') files)"
+fi
+
 # Scripts (search, scan, audit, etc.)
 if [ -d "$AGENT_DIR/scripts" ]; then
   # Copy top-level scripts (excluding sync-from-agent.sh which is CLI-only)
