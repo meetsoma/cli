@@ -19,6 +19,18 @@ setBedrockProviderModule(bedrockProviderModule);
 
 // Intercept Soma content commands before pi's main()
 const args = process.argv.slice(2);
+
+// Version flag
+if (args[0] === "--version" || args[0] === "-V" || args[0] === "-v") {
+	const { readFileSync } = await import("fs");
+	const { fileURLToPath } = await import("url");
+	const { dirname, join } = await import("path");
+	const __dirname = dirname(fileURLToPath(import.meta.url));
+	const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf-8"));
+	console.log(`soma v${pkg.version}`);
+	process.exit(0);
+}
+
 if (args[0] === "content" || (args[0] === "init" && args.includes("--template"))) {
 	handleContentCommand(args).then(handled => {
 		if (!handled) main(args);
