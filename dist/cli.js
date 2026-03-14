@@ -50,7 +50,7 @@ process.exit = function somaRotationExit(code) {
 				unlinkSync(signal);
 
 				// Log rotation
-				const reason = (meta as any).reason || "auto-breathe";
+				const reason = meta.reason || "auto-breathe";
 				process.stderr.write(`\n🫧 Rotating session (${reason})...\n\n`);
 
 				// Re-exec with incremented depth counter
