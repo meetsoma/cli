@@ -1,6 +1,6 @@
 {
 	"name": "meetsoma",
-	"version": "0.5.0",
+	"version": "0.5.1",
 	"description": "AI coding agent with self-growing memory — identity, protocols, and muscles that evolve with use",
 	"type": "module",
 	"piConfig": {
