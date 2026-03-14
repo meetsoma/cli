@@ -27,6 +27,7 @@
 		"extensions",
 		"core",
 		"prompts",
+		"scripts",
 		".soma",
 		"CHANGELOG.md"
 	],
