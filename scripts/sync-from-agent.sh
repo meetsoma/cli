@@ -77,19 +77,35 @@ if [ -d "$AGENT_DIR/docs" ]; then
   echo "  ✓ docs/ ($(ls "$CLI_DIR/docs/"*.md | wc -l | tr -d ' ') files)"
 fi
 
-# Scripts (search, scan, audit, etc.)
+# Scripts — only ship user-facing scripts (skip _dev/)
 if [ -d "$AGENT_DIR/scripts" ]; then
-  # Copy top-level scripts (excluding sync-from-agent.sh which is CLI-only)
-  for f in "$AGENT_DIR/scripts/"*.sh; do
-    [ -f "$f" ] && cp "$f" "$CLI_DIR/scripts/"
+  # Copy top-level scripts only (not _dev/ subdirectory)
+  for f in "$AGENT_DIR/scripts/"*.sh "$AGENT_DIR/scripts/"*.ts; do
+    [ -f "$f" ] || continue
+    local_name=$(basename "$f")
+    # Skip CLI-only scripts
+    [[ "$local_name" == "sync-from-agent.sh" ]] && continue
+    [[ "$local_name" == "release.sh" ]] && continue
+    cp "$f" "$CLI_DIR/scripts/"
   done
-  # Copy audit scripts directory
-  if [ -d "$AGENT_DIR/scripts/audits" ]; then
-    mkdir -p "$CLI_DIR/scripts/audits"
-    cp "$AGENT_DIR/scripts/audits/"*.sh "$CLI_DIR/scripts/audits/"
+  # Remove stale scripts that were previously synced but no longer exist in agent
+  for f in "$CLI_DIR/scripts/"*.sh; do
+    [ -f "$f" ] || continue
+    local_name=$(basename "$f")
+    [[ "$local_name" == "sync-from-agent.sh" ]] && continue
+    [[ "$local_name" == "release.sh" ]] && continue
+    if [ ! -f "$AGENT_DIR/scripts/$local_name" ]; then
+      rm "$f"
+      echo "  - removed stale: $local_name"
+    fi
+  done
+  # Remove stale audits dir if agent no longer ships it
+  if [ -d "$CLI_DIR/scripts/audits" ] && [ ! -d "$AGENT_DIR/scripts/audits" ]; then
+    rm -rf "$CLI_DIR/scripts/audits"
+    echo "  - removed stale: audits/"
   fi
-  chmod +x "$CLI_DIR/scripts/"*.sh "$CLI_DIR/scripts/audits/"*.sh 2>/dev/null
-  echo "  ✓ scripts/ ($(ls "$CLI_DIR/scripts/"*.sh 2>/dev/null | wc -l | tr -d ' ') scripts + audits)"
+  chmod +x "$CLI_DIR/scripts/"*.sh 2>/dev/null
+  echo "  ✓ scripts/ ($(ls "$CLI_DIR/scripts/"*.sh "$CLI_DIR/scripts/"*.ts 2>/dev/null | wc -l | tr -d ' ') files)"
 fi
 
 echo "Done. Ready to publish."
