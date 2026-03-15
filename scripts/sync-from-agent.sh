@@ -86,6 +86,7 @@ if [ -d "$AGENT_DIR/scripts" ]; then
     # Skip CLI-only scripts
     [[ "$local_name" == "sync-from-agent.sh" ]] && continue
     [[ "$local_name" == "release.sh" ]] && continue
+    [[ "$local_name" == "install-gum.sh" ]] && continue
     cp "$f" "$CLI_DIR/scripts/"
   done
   # Remove stale scripts that were previously synced but no longer exist in agent
@@ -94,6 +95,7 @@ if [ -d "$AGENT_DIR/scripts" ]; then
     local_name=$(basename "$f")
     [[ "$local_name" == "sync-from-agent.sh" ]] && continue
     [[ "$local_name" == "release.sh" ]] && continue
+    [[ "$local_name" == "install-gum.sh" ]] && continue
     if [ ! -f "$AGENT_DIR/scripts/$local_name" ]; then
       rm "$f"
       echo "  - removed stale: $local_name"

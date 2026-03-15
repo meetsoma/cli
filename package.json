@@ -24,6 +24,7 @@
 	},
 	"files": [
 		"dist",
+		"bin",
 		"extensions",
 		"core",
 		"prompts",
@@ -89,6 +90,7 @@
 		"node": ">=20.6.0"
 	},
 	"scripts": {
+		"postinstall": "bash scripts/install-gum.sh || true",
 		"prepublishOnly": "bash scripts/sync-from-agent.sh"
 	}
 }
