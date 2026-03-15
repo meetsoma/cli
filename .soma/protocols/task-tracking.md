@@ -5,14 +5,14 @@ status: active
 heat-default: warm
 applies-to: [always]
 breadcrumb: "Keep a live kanban in .soma/_kanban.md. Move cards as you work — not after. On exhale, the board should reflect reality: what's active, what shipped, what's parked. A stale board is worse than no board."
-author: Curtis Mercier
-license: CC BY 4.0
+author: meetsoma
+license: MIT
 version: 1.0.0
 tier: core
 scope: bundled
 tags: [workflow, planning, continuity, kanban]
 created: 2026-03-12
-updated: 2026-03-14
+updated: 2026-03-15
 ---
 
 # Task Tracking Protocol
@@ -138,8 +138,3 @@ Group Done cards by session date so you can see velocity:
 ```
 
 ---
-
-<!--
-Licensed under CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
-Author: Curtis Mercier
--->

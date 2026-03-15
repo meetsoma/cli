@@ -10,9 +10,9 @@ tier: core
 scope: bundled
 tags: [tools, safety, self-awareness]
 created: 2026-03-10
-updated: 2026-03-14
-author: Curtis Mercier
-license: CC BY 4.0
+updated: 2026-03-15
+author: meetsoma
+license: MIT
 ---
 # Tool Discipline
 
@@ -62,8 +62,3 @@ These aren't enforced by code — they produce better results:
 - Settings: `core/settings.ts` → `GuardSettings`
 
 ---
-
-<!--
-Licensed under CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/
-Author: Curtis Mercier
--->
