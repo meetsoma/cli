@@ -90,7 +90,19 @@ if (args[0] === "--version" || args[0] === "-V" || args[0] === "-v") {
 	process.exit(0);
 }
 
-if (args[0] === "content" || args[0] === "install" || args[0] === "list" || args[0] === "init") {
+// Help flag — use gum if available, fall back to plain text
+if (args[0] === "--help" || args[0] === "-h") {
+	const { printHelp, printGumHelp } = await import("./cli/args.js");
+	const gumAvailable = await printGumHelp().catch(() => false);
+	if (!gumAvailable) printHelp();
+	process.exit(0);
+}
+
+if (args[0] === "inhale") {
+	// soma inhale — fresh session WITH preload from last session
+	process.env.SOMA_INHALE = "1";
+	main(args.slice(1));
+} else if (args[0] === "content" || args[0] === "install" || args[0] === "list" || args[0] === "init") {
 	handleContentCommand(args).then(handled => {
 		if (!handled) main(args);
 	}).catch(err => {
@@ -98,6 +110,7 @@ if (args[0] === "content" || args[0] === "install" || args[0] === "list" || args
 		process.exit(1);
 	});
 } else {
+	// soma (no subcommand) — fresh session, NO preload
 	main(args);
 }
 //# sourceMappingURL=cli.js.map

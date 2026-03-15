@@ -296,4 +296,106 @@ ${chalk.bold("Available Tools (default: read, bash, edit, write):")}
   ls     - List directory contents (read-only, off by default)
 `);
 }
+/**
+ * Print help using gum for glamorous terminal formatting.
+ * Returns true if gum was available and help was printed.
+ */
+export async function printGumHelp() {
+    const { execFileSync } = await import("child_process");
+    const { dirname, join } = await import("path");
+    const { fileURLToPath } = await import("url");
+    const { existsSync } = await import("fs");
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    // Find gum: bundled bin/ first, then system PATH
+    let gum = join(__dirname, "..", "..", "bin", "gum");
+    if (!existsSync(gum)) {
+        try { execFileSync("which", ["gum"], { stdio: "pipe" }); gum = "gum"; }
+        catch { return false; }
+    }
+    const run = (args, input) => {
+        const opts = { stdio: ["pipe", "pipe", "pipe"], encoding: "utf-8" };
+        if (input) opts.input = input;
+        return execFileSync(gum, args, opts).trim();
+    };
+    // Header
+    const title = run(["style", "--bold", "--foreground", "212", "--border", "rounded", "--padding", "0 2", "--margin", "1 0"], "σ  soma");
+    console.log(title);
+    const tagline = run(["style", "--foreground", "245", "--italic"], "AI coding agent with self-growing memory");
+    console.log(tagline);
+    console.log();
+    // Usage
+    const help = `# Usage
+
+\`\`\`
+soma [options] [@files...] [messages...]
+\`\`\`
+
+# Commands
+
+| Command | Description |
+|---------|-------------|
+| \`soma\` | Start fresh session (no preload) |
+| \`soma inhale\` | Start fresh session with preload from last session |
+| \`soma -c\` | Continue previous session |
+| \`soma -r\` | Resume — pick a session to continue |
+| \`soma install <src>\` | Install extension source |
+| \`soma list\` | List installed extensions |
+| \`soma content\` | Manage content packages |
+| \`soma config\` | TUI to enable/disable resources |
+
+# Options
+
+| Flag | Description |
+|------|-------------|
+| \`--provider <name>\` | Provider (default: google) |
+| \`--model <pattern>\` | Model pattern or "provider/id:thinking" |
+| \`--continue, -c\` | Continue previous session |
+| \`--resume, -r\` | Select a session to resume |
+| \`--print, -p\` | Non-interactive: process prompt and exit |
+| \`--thinking <level>\` | off, minimal, low, medium, high, xhigh |
+| \`--models <patterns>\` | Comma-separated for Ctrl+P cycling |
+| \`--extension, -e <path>\` | Load an extension file |
+| \`--skill <path>\` | Load a skill file or directory |
+| \`--no-session\` | Ephemeral — don't save session |
+| \`--no-tools\` | Disable all built-in tools |
+| \`--tools <list>\` | Enable specific tools (read,bash,edit,write,grep,find,ls) |
+| \`--verbose\` | Force verbose startup |
+| \`--help, -h\` | Show this help |
+| \`--version, -v\` | Show version |
+
+# Slash Commands (inside session)
+
+| Command | Description |
+|---------|-------------|
+| \`/exhale\` | Save state + end session |
+| \`/breathe\` | Save + rotate to fresh session |
+| \`/inhale\` | Reset session and load preload |
+| \`/rest\` | Disable keepalive + exhale (AFK) |
+| \`/pin <name>\` | Keep a protocol or muscle hot |
+| \`/kill <name>\` | Drop a protocol or muscle to cold |
+| \`/soma\` | Status, init, prompt preview |
+
+# Examples
+
+\`\`\`bash
+# Fresh start
+soma
+
+# Start with context from last session  
+soma inhale
+
+# Continue where you left off
+soma -c
+
+# Quick one-shot question
+soma -p "What does src/index.ts export?"
+
+# Use a specific model
+soma --model sonnet:high "Solve this"
+\`\`\`
+`;
+    const formatted = run(["format", "--type", "markdown"], help);
+    console.log(formatted);
+    return true;
+}
 //# sourceMappingURL=args.js.map
